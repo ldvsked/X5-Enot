@@ -35,12 +35,15 @@ func main() {
 
 			score, analysis := CalculateScore(sub)
 			name := answerString(sub.Answers, "fio")
+			avatar := FindAvatarByID(sub.EnotID)
 
 			mu.Lock()
 			candidate := Candidate{
 				ID:          idCounter,
 				Name:        name,
 				EnotID:      sub.EnotID,
+				EnotName:    avatar.Name,
+				EnotImg:     avatar.Img,
 				TotalScore:  score,
 				Analysis:    analysis,
 				FullAnswers: sub.Answers,
@@ -68,6 +71,8 @@ func main() {
 						ID:         candidate.ID,
 						Name:       candidate.Name,
 						EnotID:     candidate.EnotID,
+						EnotName:   candidate.EnotName,
+						EnotImg:    candidate.EnotImg,
 						TotalScore: candidate.TotalScore,
 					})
 				}
