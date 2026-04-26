@@ -67,6 +67,9 @@ func main() {
 				mu.Lock()
 				summaries := make([]CandidateSummary, 0, len(candidates))
 				for _, candidate := range candidates {
+					if candidate.TotalScore < 50 {
+						continue
+					}
 					summaries = append(summaries, CandidateSummary{
 						ID:         candidate.ID,
 						Name:       candidate.Name,
