@@ -4,7 +4,11 @@ import "fmt"
 
 func CalculateScore(s Submission) (int, ScoreAnalysis) {
 	var total int
-	var analysis ScoreAnalysis
+	analysis := ScoreAnalysis{
+		Strengths:    []string{},
+		Weaknesses:   []string{},
+		ScoreDetails: []ScoreDetail{},
+	}
 
 	// ЭТАЛОН: Те навыки, за которые мы даем баллы в этой вакансии
 	// Если вакансия другая - HR просто меняет этот список (в будущем через админку)

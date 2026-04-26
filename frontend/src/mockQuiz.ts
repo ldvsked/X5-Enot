@@ -4,9 +4,9 @@ export const mockQuiz: QuizResponse = {
   steps: [
     {
       type: "welcome",
-      title: "Стажировка в X5",
+      title: "Работа в X5",
       image_url: "/static/welcome.webp",
-      text: "Пройди путь енота до оффера!",
+      text: "Выбери аватар и пройди короткую анкету по вакансии.",
     },
     {
       type: "avatar_selection",
@@ -118,13 +118,20 @@ export const mockQuiz: QuizResponse = {
             "Коммуникация",
             "Лидерство",
             "Критическое мышление",
+            "Ответственность",
+            "Инициативность",
+            "Адаптивность",
+            "Самообучение",
+            "Эмпатия",
+            "Системное мышление",
+            "Публичные выступления",
           ],
         },
       ],
     },
     {
       type: "final",
-      title: "Енот наелся!",
+      title: "",
       image_url: "/static/thank-you.webp",
     },
   ],

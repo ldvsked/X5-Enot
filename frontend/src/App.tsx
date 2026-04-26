@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { getCandidate, getCandidates, getQuizSafe, submitQuiz } from "./api";
+import { useEffect, useState } from "react";
+import { API_BASE_URL, getCandidate, getCandidates, getQuizSafe, submitQuiz } from "./api";
 import type {
   Answers,
   AvatarSelectionStep,
@@ -14,13 +14,8 @@ import type {
   WelcomeStep,
 } from "./types";
 
-const supportingMessages = [
-  "Енот уже несет анкету в сторону оффера.",
-  "Еще чуть-чуть, и HR увидит самое важное.",
-  "Супер, этот блок стал короче обычной формы.",
-];
-
 type Screen = { kind: "candidate" } | { kind: "hr-list" } | { kind: "hr-detail"; candidateId: number };
+type SupportState = { imageUrl?: string } | null;
 
 function shouldShowField(item: QuestionItem, answers: Answers) {
   if (!item.show_if) return true;
@@ -58,11 +53,11 @@ function isStepComplete(step: QuizStep, answers: Answers, enotId: string) {
 function getScreenFromHash(): Screen {
   const hash = window.location.hash.replace(/^#/, "");
 
-  if (hash === "/hr") {
+  if (hash === "/hr" || hash === "hr") {
     return { kind: "hr-list" };
   }
 
-  const match = hash.match(/^\/hr\/candidates\/(\d+)$/);
+  const match = hash.match(/^\/?hr\/candidates\/(\d+)$/);
   if (match) {
     return { kind: "hr-detail", candidateId: Number(match[1]) };
   }
@@ -71,7 +66,8 @@ function getScreenFromHash(): Screen {
 }
 
 function setHash(nextHash: string) {
-  window.location.hash = nextHash;
+  const normalized = nextHash.startsWith("#") ? nextHash : `#${nextHash}`;
+  window.location.hash = normalized;
 }
 
 export default function App() {
@@ -88,38 +84,31 @@ export default function App() {
   }
 
   if (screen.kind === "hr-detail") {
-    return <HrCandidateDetailsPage candidateId={screen.candidateId} onBack={() => setHash("/hr")} />;
+    return <HrCandidateDetailsPage candidateId={screen.candidateId} />;
   }
 
-  return <CandidateQuizPage onOpenHr={() => setHash("/hr")} />;
+  return <CandidateQuizPage />;
 }
 
-function CandidateQuizPage({ onOpenHr }: { onOpenHr: () => void }) {
+function CandidateQuizPage() {
   const [quiz, setQuiz] = useState<QuizResponse | null>(null);
-  const [source, setSource] = useState<"backend" | "mock">("mock");
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [enotId, setEnotId] = useState("");
   const [submitResult, setSubmitResult] = useState<SubmitResponse | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSupport, setShowSupport] = useState(false);
+  const [supportState, setSupportState] = useState<SupportState>(null);
 
   useEffect(() => {
-    getQuizSafe().then(({ data, source: quizSource }) => {
+    getQuizSafe().then(({ data }) => {
       setQuiz(data);
-      setSource(quizSource);
     });
   }, []);
 
   const steps = quiz?.steps ?? [];
   const currentStep = steps[stepIndex];
   const progress = steps.length > 1 ? Math.round((stepIndex / (steps.length - 1)) * 100) : 0;
-  const selectedEnot = useMemo(() => {
-    const avatarStep = steps.find((step): step is AvatarSelectionStep => step.type === "avatar_selection");
-    return avatarStep?.options.find((option) => option.id === enotId);
-  }, [enotId, steps]);
-
   function setAnswer(id: string, value: string | string[]) {
     setAnswers((current) => ({ ...current, [id]: value }));
   }
@@ -150,11 +139,16 @@ function CandidateQuizPage({ onOpenHr }: { onOpenHr: () => void }) {
       return;
     }
 
-    setShowSupport(true);
+    if (currentStep.type === "questions") {
+      setSupportState({
+        imageUrl: currentStep.support_image_url,
+      });
+    }
+
     window.setTimeout(() => {
-      setShowSupport(false);
+      setSupportState(null);
       setStepIndex((current) => Math.min(current + 1, steps.length - 1));
-    }, currentStep.type === "questions" ? 650 : 0);
+    }, currentStep.type === "questions" ? 1800 : 0);
   }
 
   function goBack() {
@@ -194,28 +188,16 @@ function CandidateQuizPage({ onOpenHr }: { onOpenHr: () => void }) {
 
   return (
     <main className="app-shell">
-      <section className={`quiz-card ${currentStep.type === "avatar_selection" ? "avatar-step-card" : ""}`}>
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">X5 First Touch</p>
-            <h1>{currentStep.type === "welcome" ? currentStep.title : quiz.steps[0]?.title}</h1>
-          </div>
-          <div className="topbar-actions">
-            <button className="nav-link-button" type="button" onClick={onOpenHr}>
-              HR-панель
-            </button>
-            <span className={`backend-pill ${source}`}>{source === "backend" ? "backend online" : "mock mode"}</span>
-          </div>
-        </header>
-
-        <ProgressRaccoon progress={progress} selectedName={selectedEnot?.name} />
+      <section className={`quiz-card candidate-card ${currentStep.type === "avatar_selection" ? "avatar-step-card" : ""}`}>
+        <ProgressRaccoon progress={progress} />
 
         <div className="step-area">
-          {currentStep.type === "welcome" && <WelcomeStepView step={currentStep} />}
-          {currentStep.type === "avatar_selection" && (
+          {supportState && <SupportTransitionView state={supportState} />}
+          {!supportState && currentStep.type === "welcome" && <WelcomeStepView step={currentStep} />}
+          {!supportState && currentStep.type === "avatar_selection" && (
             <AvatarStepView step={currentStep} selectedId={enotId} onSelect={setEnotId} />
           )}
-          {currentStep.type === "questions" && (
+          {!supportState && currentStep.type === "questions" && (
             <QuestionsStepView
               step={currentStep}
               answers={answers}
@@ -224,31 +206,25 @@ function CandidateQuizPage({ onOpenHr }: { onOpenHr: () => void }) {
               onMultiToggle={toggleMultiValue}
             />
           )}
-          {currentStep.type === "final" && (
-            <FinalStepView
-              step={currentStep}
-              result={submitResult}
-              error={submitError}
-              selectedName={selectedEnot?.name}
-            />
+          {!supportState && currentStep.type === "final" && (
+            <FinalStepView step={currentStep} result={submitResult} error={submitError} />
           )}
         </div>
 
-        {showSupport && (
-          <div className="support-popover">
-            {supportingMessages[stepIndex % supportingMessages.length]}
-          </div>
-        )}
-
         <footer className="actions">
-          <button className="secondary-button" type="button" onClick={goBack} disabled={stepIndex === 0 || isSubmitting}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={goBack}
+            disabled={stepIndex === 0 || isSubmitting || Boolean(supportState)}
+          >
             Назад
           </button>
           <button
             className="primary-button"
             type="button"
             onClick={goNext}
-            disabled={(!canContinue && currentStep.type !== "final") || isSubmitting || Boolean(submitResult)}
+            disabled={(!canContinue && currentStep.type !== "final") || isSubmitting || Boolean(submitResult) || Boolean(supportState)}
           >
             {currentStep.type === "final" ? (isSubmitting ? "Отправляем..." : "Завершить") : "Дальше"}
           </button>
@@ -283,9 +259,6 @@ function HrCandidatesPage({ onOpenCandidate }: { onOpenCandidate: (candidateId: 
             <p className="eyebrow">HR panel</p>
             <h1>Кандидаты после скоринга</h1>
           </div>
-          <button className="nav-link-button" type="button" onClick={() => setHash("/")}>
-            К анкете
-          </button>
         </header>
 
         {loading && <div className="loading-card">Загружаем кандидатов...</div>}
@@ -300,14 +273,17 @@ function HrCandidatesPage({ onOpenCandidate }: { onOpenCandidate: (candidateId: 
                   <img className="candidate-avatar" src={candidate.enot_img} alt={candidate.enot_name} />
                   <div>
                     <h2>{candidate.name}</h2>
-                    <p>{candidate.enot_name}</p>
                   </div>
                 </div>
                 <div className="candidate-list-side">
                   <strong>{candidate.total_score} баллов</strong>
-                  <button className="primary-button" type="button" onClick={() => onOpenCandidate(candidate.id)}>
+                  <a
+                    className="primary-button action-link"
+                    href={`#/hr/candidates/${candidate.id}`}
+                    onClick={() => onOpenCandidate(Number(candidate.id))}
+                  >
                     Подробнее
-                  </button>
+                  </a>
                 </div>
               </article>
             ))}
@@ -318,7 +294,7 @@ function HrCandidatesPage({ onOpenCandidate }: { onOpenCandidate: (candidateId: 
   );
 }
 
-function HrCandidateDetailsPage({ candidateId, onBack }: { candidateId: number; onBack: () => void }) {
+function HrCandidateDetailsPage({ candidateId }: { candidateId: number }) {
   const [candidate, setCandidate] = useState<CandidateDetails | null>(null);
   const [error, setError] = useState("");
 
@@ -341,9 +317,6 @@ function HrCandidateDetailsPage({ candidateId, onBack }: { candidateId: number; 
             <p className="eyebrow">HR panel</p>
             <h1>Карточка кандидата</h1>
           </div>
-          <button className="secondary-button" type="button" onClick={onBack}>
-            Назад к списку
-          </button>
         </header>
 
         {error && <p className="error-text">{error}</p>}
@@ -355,7 +328,6 @@ function HrCandidateDetailsPage({ candidateId, onBack }: { candidateId: number; 
               <img className="candidate-avatar large" src={candidate.enot_img} alt={candidate.enot_name} />
               <div>
                 <h2>{candidate.name}</h2>
-                <p>{candidate.enot_name}</p>
                 <strong className="score-badge">{candidate.total_score} баллов</strong>
               </div>
             </section>
@@ -412,19 +384,23 @@ function HrCandidateDetailsPage({ candidateId, onBack }: { candidateId: number; 
   );
 }
 
-function ProgressRaccoon({ progress, selectedName }: { progress: number; selectedName?: string }) {
+function ProgressRaccoon({ progress }: { progress: number }) {
+  const runnerImage = `${new URL(API_BASE_URL).origin}/static/enot.webp`;
+
   return (
     <div className="progress-wrap" aria-label={`Прогресс ${progress}%`}>
-      <div className="progress-meta">
-        <span>{selectedName ?? "Енот выбирает маршрут"}</span>
-        <strong>{progress}%</strong>
-      </div>
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${progress}%` }} />
-        <div className="raccoon-runner" style={{ left: `${progress}%` }}>
-          <span>ENOT</span>
-        </div>
+        <img className="raccoon-runner" style={{ left: `${progress}%` }} src={runnerImage} alt="" aria-hidden="true" />
       </div>
+    </div>
+  );
+}
+
+function SupportTransitionView({ state }: { state: NonNullable<SupportState> }) {
+  return (
+    <div className="support-transition">
+      {state.imageUrl && <ImageWithFallback src={state.imageUrl} alt="" className="support-transition-image" />}
     </div>
   );
 }
@@ -448,7 +424,7 @@ function WelcomeStepView({ step }: { step: WelcomeStep }) {
     <div className="welcome-layout">
       <ImageWithFallback src={step.image_url} alt={step.title} />
       <div>
-        <h2>{step.title}</h2>
+        <h1 className="welcome-title">{step.title}</h1>
         <p>{step.text}</p>
       </div>
     </div>
@@ -516,12 +492,6 @@ function QuestionsStepView({
             />
           ))}
       </div>
-      {step.support_image_url && (
-        <div className="support-card">
-          <ImageWithFallback src={step.support_image_url} alt={step.title} className="support-image" />
-          <p>Енот рядом. Этот блок уже почти закрыт.</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -604,24 +574,19 @@ function FinalStepView({
   step,
   result,
   error,
-  selectedName,
 }: {
   step: FinalStep;
   result: SubmitResponse | null;
   error: string;
-  selectedName?: string;
 }) {
   return (
     <div className="final-layout">
       <ImageWithFallback src={step.image_url} alt={step.title} />
       <div>
-        <h2>{step.title}</h2>
-        <p>{selectedName ? `${selectedName} добрался до финиша.` : "Анкета готова к отправке."}</p>
-        {result && (
-          <div className="result-box">
-            <strong>{result.message ?? "Спасибо! Анкета отправлена."}</strong>
-          </div>
-        )}
+        <h2>Спасибо!</h2>
+        <p>Ты молодец! Спасибо за заполнение анкеты, мы вернемся позже с фидбэком.</p>
+        <p>Вперед еноты! Вперед X5!</p>
+        {result && <div className="result-box" />}
         {error && <p className="error-text">{error}</p>}
       </div>
     </div>

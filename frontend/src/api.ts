@@ -79,6 +79,12 @@ export async function getCandidate(id: number): Promise<CandidateDetails> {
   return {
     ...candidate,
     enot_img: toAbsoluteAssetUrl(candidate.enot_img),
+    analysis: {
+      strengths: candidate.analysis?.strengths ?? [],
+      weaknesses: candidate.analysis?.weaknesses ?? [],
+      score_details: candidate.analysis?.score_details ?? [],
+    },
+    full_answers: candidate.full_answers ?? {},
   };
 }
 

@@ -43,9 +43,15 @@ input {
   width: 100%;
 }
 
+.candidate-card {
+  max-width: 920px;
+  min-height: 620px;
+  padding-top: 14px;
+}
+
 .avatar-step-card {
   min-height: auto;
-  padding-bottom: 20px;
+  padding-bottom: 18px;
 }
 
 .avatar-step-card .progress-wrap {
@@ -69,18 +75,11 @@ input {
 }
 
 .topbar,
-.actions,
-.progress-meta {
+.actions {
   align-items: center;
   display: flex;
   justify-content: space-between;
   gap: 16px;
-}
-
-.topbar-actions {
-  align-items: center;
-  display: flex;
-  gap: 12px;
 }
 
 .eyebrow,
@@ -117,38 +116,15 @@ p {
   line-height: 1.55;
 }
 
-.backend-pill {
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 8px 12px;
-  white-space: nowrap;
-}
-
-.backend-pill.backend {
-  background: #e5f7dc;
-  color: #22650f;
-}
-
-.backend-pill.mock {
-  background: #fff4c8;
-  color: #7a5500;
-}
-
 .progress-wrap {
-  margin: 28px 0 34px;
-}
-
-.progress-meta {
-  color: #536159;
-  font-size: 14px;
-  margin-bottom: 10px;
+  margin: 6px 0 18px;
 }
 
 .progress-track {
   background: #dfead9;
   border-radius: 999px;
-  height: 18px;
+  height: 34px;
+  overflow: visible;
   position: relative;
 }
 
@@ -160,34 +136,26 @@ p {
 }
 
 .raccoon-runner {
-  align-items: center;
-  background: #2f3a34;
-  border: 3px solid #ffffff;
-  border-radius: 999px;
-  color: #ffffff;
-  display: flex;
-  font-size: 10px;
-  font-weight: 900;
-  height: 42px;
-  justify-content: center;
-  letter-spacing: 0.05em;
+  height: 96px;
+  object-fit: contain;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
   transition: left 280ms ease;
-  width: 58px;
+  width: 96px;
+  z-index: 2;
 }
 
 .step-area {
-  min-height: 420px;
+  min-height: 330px;
 }
 
 .welcome-layout,
 .final-layout {
   align-items: center;
   display: grid;
-  gap: 32px;
-  grid-template-columns: minmax(220px, 0.8fr) 1.2fr;
+  gap: 24px;
+  grid-template-columns: minmax(180px, 0.72fr) 1.28fr;
 }
 
 .hero-image,
@@ -197,6 +165,19 @@ p {
   border-radius: 8px;
   object-fit: cover;
   width: 100%;
+}
+
+.welcome-layout .hero-image,
+.welcome-layout .image-fallback,
+.final-layout .hero-image,
+.final-layout .image-fallback {
+  max-height: 280px;
+}
+
+.welcome-title {
+  font-size: 42px;
+  line-height: 1.05;
+  margin-bottom: 12px;
 }
 
 .image-fallback {
@@ -322,33 +303,18 @@ input:focus {
   color: #ad3e21;
 }
 
-.support-popover {
-  background: #25342b;
-  border-radius: 8px;
-  bottom: 88px;
-  color: #ffffff;
-  font-weight: 800;
-  left: 50%;
-  max-width: calc(100% - 56px);
-  padding: 14px 18px;
-  position: absolute;
-  transform: translateX(-50%);
-}
-
-.support-card {
+.support-transition {
   align-items: center;
-  background: #eef6ea;
-  border: 1px solid #d6e7ce;
-  border-radius: 8px;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 180px 1fr;
-  margin-top: 24px;
-  padding: 16px;
+  display: flex;
+  justify-content: center;
+  min-height: 330px;
+  padding: 8px;
 }
 
-.support-image {
-  aspect-ratio: 1.15;
+.support-transition-image {
+  aspect-ratio: 1;
+  max-height: 300px;
+  max-width: min(100%, 420px);
 }
 
 .actions {
@@ -365,6 +331,13 @@ input:focus {
   min-height: 48px;
   min-width: 132px;
   padding: 0 18px;
+}
+
+.action-link {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .primary-button {
@@ -386,22 +359,7 @@ input:focus {
 }
 
 .result-box {
-  background: #eff8ea;
-  border: 1px solid #c9e4bd;
-  border-radius: 8px;
-  display: grid;
-  gap: 8px;
-  margin-top: 18px;
-  padding: 16px;
-}
-
-.nav-link-button {
-  background: transparent;
-  border: 0;
-  color: #356742;
-  cursor: pointer;
-  font-weight: 800;
-  padding: 6px 0;
+  display: none;
 }
 
 .hr-card {
@@ -451,6 +409,11 @@ input:focus {
 
 .candidate-list-main {
   flex: 1;
+  justify-content: flex-start;
+}
+
+.candidate-list-main > div {
+  text-align: left;
 }
 
 .candidate-list-side {
@@ -525,15 +488,17 @@ input:focus {
     padding: 20px;
   }
 
+  .candidate-card {
+    min-height: 100vh;
+  }
+
   .topbar,
   .actions,
   .candidate-list-item,
   .candidate-list-side,
   .candidate-hero,
   .answer-row,
-  .score-row,
-  .topbar-actions,
-  .support-card {
+  .score-row {
     align-items: stretch;
     flex-direction: column;
   }
@@ -542,7 +507,7 @@ input:focus {
   .final-layout,
   .avatar-grid,
   .detail-grid,
-  .support-card {
+  .support-transition {
     grid-template-columns: 1fr;
   }
 
@@ -552,6 +517,10 @@ input:focus {
 
   h2 {
     font-size: 28px;
+  }
+
+  .welcome-title {
+    font-size: 30px;
   }
 
   .primary-button,

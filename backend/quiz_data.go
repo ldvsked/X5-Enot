@@ -13,8 +13,8 @@ func GetQuizSteps() []QuizStep {
 	return []QuizStep{
 		{
 			Type:     "welcome",
-			Title:    "Стажировка в X5",
-			Text:     "Пройди путь енота до оффера!",
+			Title:    "Работа в X5",
+			Text:     "Выбери аватар и пройди короткую анкету по вакансии.",
 			ImageURL: "/static/welcome.webp",
 		},
 		{
@@ -58,12 +58,12 @@ func GetQuizSteps() []QuizStep {
 				{ID: "intern_details", Label: "Какие стажировки прошел?", UI: "input_text", ShowIf: "intern_level != '0'"},
 				{ID: "hard_skills", Label: "Хард-скиллы (выбери до 5)", UI: "multi_select", Required: true, Max: 5, Variants: []string{"Go", "Python", "SQL", "Docker", "Git", "Linux", "Kubernetes", "Redis"}},
 				{ID: "achievements", Label: "Профессиональные достижения / соревнования", UI: "single_select", Variants: []string{"0", "1", "2", "3", "4", "5+"}},
-				{ID: "soft_skills", Label: "Софт-скиллы (выбери до 5)", UI: "multi_select", Max: 5, Variants: []string{"Командная работа", "Тайм-менеджмент", "Коммуникация", "Лидерство", "Критическое мышление"}},
+				{ID: "soft_skills", Label: "Софт-скиллы (выбери до 5)", UI: "multi_select", Max: 5, Variants: []string{"Командная работа", "Тайм-менеджмент", "Коммуникация", "Лидерство", "Критическое мышление", "Ответственность", "Инициативность", "Адаптивность", "Самообучение", "Эмпатия", "Системное мышление", "Публичные выступления"}},
 			},
 		},
 		{
 			Type:     "final",
-			Title:    "Енот наелся!",
+			Title:    "",
 			ImageURL: "/static/thank-you.webp",
 		},
 	}
