@@ -5,25 +5,26 @@ export const mockQuiz: QuizResponse = {
     {
       type: "welcome",
       title: "Стажировка в X5",
-      image_url: "/static/welcome.png",
+      image_url: "/static/welcome.webp",
       text: "Пройди путь енота до оффера!",
     },
     {
       type: "avatar_selection",
       title: "Выбери аватара",
       options: [
-        { id: "enot_1", name: "Енот 1", img: "/static/e1.png" },
-        { id: "enot_2", name: "Енот 2", img: "/static/e2.png" },
-        { id: "enot_3", name: "Енот 3", img: "/static/e3.png" },
-        { id: "enot_4", name: "Енот 4", img: "/static/e4.png" },
-        { id: "enot_5", name: "Енот 5", img: "/static/e5.png" },
-        { id: "enot_6", name: "Енот 6", img: "/static/e6.png" },
+        { id: "enot_1", name: "Енот 1", img: "/static/enot-avatar-1.webp" },
+        { id: "enot_2", name: "Енот 2", img: "/static/enot-avatar-2.webp" },
+        { id: "enot_3", name: "Енот 3", img: "/static/enot-avatar-3.webp" },
+        { id: "enot_4", name: "Енот 4", img: "/static/enot-avatar-4.webp" },
+        { id: "enot_5", name: "Енот 5", img: "/static/enot-avatar-5.webp" },
+        { id: "enot_6", name: "Енот 6", img: "/static/enot-avatar-6.webp" },
       ],
     },
     {
       type: "questions",
       block_id: "common_info",
       title: "Общая информация",
+      support_image_url: "/static/support-common-info.webp",
       items: [
         { id: "fio", label: "ФИО", ui: "input_text", required: true },
         { id: "age", label: "Возраст", ui: "input_text", required: true },
@@ -41,6 +42,7 @@ export const mockQuiz: QuizResponse = {
       type: "questions",
       block_id: "availability",
       title: "Доступность",
+      support_image_url: "/static/support-availability.webp",
       items: [
         {
           id: "ready_status",
@@ -66,6 +68,7 @@ export const mockQuiz: QuizResponse = {
       type: "questions",
       block_id: "experience_skills",
       title: "Опыт и навыки",
+      support_image_url: "/static/support-experience.webp",
       items: [
         {
           id: "exp_level",
@@ -122,7 +125,7 @@ export const mockQuiz: QuizResponse = {
     {
       type: "final",
       title: "Енот наелся!",
-      image_url: "/static/finish.png",
+      image_url: "/static/thank-you.webp",
     },
   ],
 };

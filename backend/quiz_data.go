@@ -1,26 +1,32 @@
 package main
 
+var avatarOptions = []Option{
+	{ID: "enot_1", Name: "Енот 1", Img: "/static/enot-avatar-1.webp"},
+	{ID: "enot_2", Name: "Енот 2", Img: "/static/enot-avatar-2.webp"},
+	{ID: "enot_3", Name: "Енот 3", Img: "/static/enot-avatar-3.webp"},
+	{ID: "enot_4", Name: "Енот 4", Img: "/static/enot-avatar-4.webp"},
+	{ID: "enot_5", Name: "Енот 5", Img: "/static/enot-avatar-5.webp"},
+	{ID: "enot_6", Name: "Енот 6", Img: "/static/enot-avatar-6.webp"},
+}
+
 func GetQuizSteps() []QuizStep {
 	return []QuizStep{
 		{
-			Type: "welcome",
-			Title: "Стажировка в X5",
-			Text: "Пройди путь енота до оффера!",
-			ImageURL: "/static/enot.webp",
+			Type:     "welcome",
+			Title:    "Стажировка в X5",
+			Text:     "Пройди путь енота до оффера!",
+			ImageURL: "/static/welcome.webp",
 		},
 		{
-			Type: "avatar_selection",
-			Title: "Выбери аватара",
-			Options: []Option{
-				{ID: "coder", Name: "Енот-кодер", Img: "/static/enot.webp"},
-				{ID: "manager", Name: "Енот-менеджер", Img: "/static/enot.webp"},
-				{ID: "analyst", Name: "Енот-аналитик", Img: "/static/enot.webp"},
-			},
+			Type:    "avatar_selection",
+			Title:   "Выбери аватара",
+			Options: avatarOptions,
 		},
 		{
-			Type: "questions",
-			BlockID: "common_info",
-			Title: "Общая информация",
+			Type:            "questions",
+			BlockID:         "common_info",
+			Title:           "Общая информация",
+			SupportImageURL: "/static/support-common-info.webp",
 			Items: []QuizItem{
 				{ID: "fio", Label: "ФИО", UI: "input_text", Required: true},
 				{ID: "age", Label: "Возраст", UI: "input_text", Required: true},
@@ -30,9 +36,10 @@ func GetQuizSteps() []QuizStep {
 			},
 		},
 		{
-			Type: "questions",
-			BlockID: "availability",
-			Title: "Доступность",
+			Type:            "questions",
+			BlockID:         "availability",
+			Title:           "Доступность",
+			SupportImageURL: "/static/support-availability.webp",
 			Items: []QuizItem{
 				{ID: "ready_status", Label: "Готов начать", UI: "single_select", Required: true, Variants: []string{"Завтра", "Через неделю", "Через месяц"}},
 				{ID: "schedule", Label: "График", UI: "single_select", Required: true, Variants: []string{"Полный день", "Гибкий график", "Парт-тайм"}},
@@ -40,9 +47,10 @@ func GetQuizSteps() []QuizStep {
 			},
 		},
 		{
-			Type: "questions",
-			BlockID: "experience_skills",
-			Title: "Опыт и навыки",
+			Type:            "questions",
+			BlockID:         "experience_skills",
+			Title:           "Опыт и навыки",
+			SupportImageURL: "/static/support-experience.webp",
 			Items: []QuizItem{
 				{ID: "exp_level", Label: "Опыт работы (лет)", UI: "single_select", Required: true, Variants: []string{"0", "1", "2", "3", "4", "5+"}},
 				{ID: "exp_details", Label: "Где и кем работал?", UI: "input_text", ShowIf: "exp_level != '0'"},
@@ -54,9 +62,18 @@ func GetQuizSteps() []QuizStep {
 			},
 		},
 		{
-			Type: "final",
-			Title: "Енот наелся!",
-			ImageURL: "/static/enot.webp",
+			Type:     "final",
+			Title:    "Енот наелся!",
+			ImageURL: "/static/thank-you.webp",
 		},
 	}
+}
+
+func FindAvatarByID(enotID string) Option {
+	for _, option := range avatarOptions {
+		if option.ID == enotID {
+			return option
+		}
+	}
+	return Option{ID: enotID, Name: "Енот", Img: "/static/enot.webp"}
 }

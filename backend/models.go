@@ -17,13 +17,14 @@ type QuizItem struct {
 }
 
 type QuizStep struct {
-	Type     string     `json:"type"`
-	Title    string     `json:"title,omitempty"`
-	Text     string     `json:"text,omitempty"`
-	ImageURL string     `json:"image_url,omitempty"`
-	Options  []Option   `json:"options,omitempty"`
-	BlockID  string     `json:"block_id,omitempty"`
-	Items    []QuizItem `json:"items,omitempty"`
+	Type            string     `json:"type"`
+	Title           string     `json:"title,omitempty"`
+	Text            string     `json:"text,omitempty"`
+	ImageURL        string     `json:"image_url,omitempty"`
+	SupportImageURL string     `json:"support_image_url,omitempty"`
+	Options         []Option   `json:"options,omitempty"`
+	BlockID         string     `json:"block_id,omitempty"`
+	Items           []QuizItem `json:"items,omitempty"`
 }
 
 type Submission struct {
@@ -55,6 +56,8 @@ type Candidate struct {
 	ID          int                    `json:"id"`
 	Name        string                 `json:"name"`
 	EnotID      string                 `json:"enot_id"`
+	EnotName    string                 `json:"enot_name"`
+	EnotImg     string                 `json:"enot_img"`
 	TotalScore  int                    `json:"total_score"`
 	Analysis    ScoreAnalysis          `json:"analysis"`
 	FullAnswers map[string]interface{} `json:"full_answers"`
@@ -64,5 +67,7 @@ type CandidateSummary struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
 	EnotID     string `json:"enot_id"`
+	EnotName   string `json:"enot_name"`
+	EnotImg    string `json:"enot_img"`
 	TotalScore int    `json:"total_score"`
 }

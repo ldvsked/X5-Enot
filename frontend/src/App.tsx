@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { getQuizSafe, submitQuiz } from "./api";
+import { getCandidate, getCandidates, getQuizSafe, submitQuiz } from "./api";
 import type {
   Answers,
   AvatarSelectionStep,
+  CandidateDetails,
+  CandidateSummary,
   FinalStep,
   QuestionItem,
   QuestionsStep,
@@ -17,6 +19,8 @@ const supportingMessages = [
   "Еще чуть-чуть, и HR увидит самое важное.",
   "Супер, этот блок стал короче обычной формы.",
 ];
+
+type Screen = { kind: "candidate" } | { kind: "hr-list" } | { kind: "hr-detail"; candidateId: number };
 
 function shouldShowField(item: QuestionItem, answers: Answers) {
   if (!item.show_if) return true;
@@ -51,7 +55,46 @@ function isStepComplete(step: QuizStep, answers: Answers, enotId: string) {
   });
 }
 
+function getScreenFromHash(): Screen {
+  const hash = window.location.hash.replace(/^#/, "");
+
+  if (hash === "/hr") {
+    return { kind: "hr-list" };
+  }
+
+  const match = hash.match(/^\/hr\/candidates\/(\d+)$/);
+  if (match) {
+    return { kind: "hr-detail", candidateId: Number(match[1]) };
+  }
+
+  return { kind: "candidate" };
+}
+
+function setHash(nextHash: string) {
+  window.location.hash = nextHash;
+}
+
 export default function App() {
+  const [screen, setScreen] = useState<Screen>(() => getScreenFromHash());
+
+  useEffect(() => {
+    const handleHashChange = () => setScreen(getScreenFromHash());
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  if (screen.kind === "hr-list") {
+    return <HrCandidatesPage onOpenCandidate={(candidateId) => setHash(`/hr/candidates/${candidateId}`)} />;
+  }
+
+  if (screen.kind === "hr-detail") {
+    return <HrCandidateDetailsPage candidateId={screen.candidateId} onBack={() => setHash("/hr")} />;
+  }
+
+  return <CandidateQuizPage onOpenHr={() => setHash("/hr")} />;
+}
+
+function CandidateQuizPage({ onOpenHr }: { onOpenHr: () => void }) {
   const [quiz, setQuiz] = useState<QuizResponse | null>(null);
   const [source, setSource] = useState<"backend" | "mock">("mock");
   const [stepIndex, setStepIndex] = useState(0);
@@ -131,7 +174,7 @@ export default function App() {
     } catch {
       setSubmitResult({
         status: "review",
-        message: "Анкета сохранена в демо-режиме. HR свяжется с тобой в течение пары дней.",
+        message: "Спасибо! Анкета сохранена, HR скоро посмотрит твой профиль.",
       });
       setSubmitError("Бэк пока недоступен, показываем демо-ответ.");
     } finally {
@@ -157,7 +200,12 @@ export default function App() {
             <p className="eyebrow">X5 First Touch</p>
             <h1>{currentStep.type === "welcome" ? currentStep.title : quiz.steps[0]?.title}</h1>
           </div>
-          <span className={`backend-pill ${source}`}>{source === "backend" ? "backend online" : "mock mode"}</span>
+          <div className="topbar-actions">
+            <button className="nav-link-button" type="button" onClick={onOpenHr}>
+              HR-панель
+            </button>
+            <span className={`backend-pill ${source}`}>{source === "backend" ? "backend online" : "mock mode"}</span>
+          </div>
         </header>
 
         <ProgressRaccoon progress={progress} selectedName={selectedEnot?.name} />
@@ -210,6 +258,160 @@ export default function App() {
   );
 }
 
+function HrCandidatesPage({ onOpenCandidate }: { onOpenCandidate: (candidateId: number) => void }) {
+  const [candidates, setCandidates] = useState<CandidateSummary[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCandidates()
+      .then((data) => {
+        setCandidates(data);
+        setError("");
+      })
+      .catch(() => {
+        setError("Не удалось загрузить список кандидатов.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <main className="app-shell">
+      <section className="quiz-card hr-card">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">HR panel</p>
+            <h1>Кандидаты после скоринга</h1>
+          </div>
+          <button className="nav-link-button" type="button" onClick={() => setHash("/")}>
+            К анкете
+          </button>
+        </header>
+
+        {loading && <div className="loading-card">Загружаем кандидатов...</div>}
+        {error && !loading && <p className="error-text">{error}</p>}
+
+        {!loading && !error && (
+          <div className="candidate-list">
+            {candidates.length === 0 && <p>Пока никто не прошел скоринг.</p>}
+            {candidates.map((candidate) => (
+              <article className="candidate-list-item" key={candidate.id}>
+                <div className="candidate-list-main">
+                  <img className="candidate-avatar" src={candidate.enot_img} alt={candidate.enot_name} />
+                  <div>
+                    <h2>{candidate.name}</h2>
+                    <p>{candidate.enot_name}</p>
+                  </div>
+                </div>
+                <div className="candidate-list-side">
+                  <strong>{candidate.total_score} баллов</strong>
+                  <button className="primary-button" type="button" onClick={() => onOpenCandidate(candidate.id)}>
+                    Подробнее
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function HrCandidateDetailsPage({ candidateId, onBack }: { candidateId: number; onBack: () => void }) {
+  const [candidate, setCandidate] = useState<CandidateDetails | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getCandidate(candidateId)
+      .then((data) => {
+        setCandidate(data);
+        setError("");
+      })
+      .catch(() => {
+        setError("Не удалось загрузить карточку кандидата.");
+      });
+  }, [candidateId]);
+
+  return (
+    <main className="app-shell">
+      <section className="quiz-card hr-card">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">HR panel</p>
+            <h1>Карточка кандидата</h1>
+          </div>
+          <button className="secondary-button" type="button" onClick={onBack}>
+            Назад к списку
+          </button>
+        </header>
+
+        {error && <p className="error-text">{error}</p>}
+        {!candidate && !error && <div className="loading-card">Загружаем детали...</div>}
+
+        {candidate && (
+          <div className="candidate-detail-layout">
+            <section className="candidate-hero">
+              <img className="candidate-avatar large" src={candidate.enot_img} alt={candidate.enot_name} />
+              <div>
+                <h2>{candidate.name}</h2>
+                <p>{candidate.enot_name}</p>
+                <strong className="score-badge">{candidate.total_score} баллов</strong>
+              </div>
+            </section>
+
+            <section className="detail-grid">
+              <div className="detail-panel">
+                <h3>Сильные стороны</h3>
+                <ul className="simple-list">
+                  {candidate.analysis.strengths.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="detail-panel">
+                <h3>Зоны внимания</h3>
+                <ul className="simple-list">
+                  {candidate.analysis.weaknesses.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+
+            <section className="detail-panel">
+              <h3>Разбор скоринга</h3>
+              <div className="score-breakdown">
+                {candidate.analysis.score_details.map((detail) => (
+                  <div className="score-row" key={detail.label}>
+                    <span>{detail.label}</span>
+                    <strong>
+                      {detail.points} / {detail.max}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="detail-panel">
+              <h3>Ответы кандидата</h3>
+              <div className="answers-grid">
+                {Object.entries(candidate.full_answers).map(([key, value]) => (
+                  <div className="answer-row" key={key}>
+                    <span>{key}</span>
+                    <strong>{Array.isArray(value) ? value.join(", ") : value}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
 function ProgressRaccoon({ progress, selectedName }: { progress: number; selectedName?: string }) {
   return (
     <div className="progress-wrap" aria-label={`Прогресс ${progress}%`}>
@@ -227,18 +429,18 @@ function ProgressRaccoon({ progress, selectedName }: { progress: number; selecte
   );
 }
 
-function ImageWithFallback({ src, alt }: { src: string; alt: string }) {
+function ImageWithFallback({ src, alt, className = "hero-image" }: { src: string; alt: string; className?: string }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
     return (
-      <div className="image-fallback" role="img" aria-label={alt}>
+      <div className={`image-fallback ${className}`} role="img" aria-label={alt}>
         ENOT
       </div>
     );
   }
 
-  return <img className="hero-image" src={src} alt={alt} onError={() => setFailed(true)} />;
+  return <img className={className} src={src} alt={alt} onError={() => setFailed(true)} />;
 }
 
 function WelcomeStepView({ step }: { step: WelcomeStep }) {
@@ -275,6 +477,7 @@ function AvatarStepView({
             onClick={() => onSelect(option.id)}
           >
             <ImageWithFallback src={option.img} alt={option.name} />
+            <strong className="avatar-label">{option.name}</strong>
           </button>
         ))}
       </div>
@@ -313,6 +516,12 @@ function QuestionsStepView({
             />
           ))}
       </div>
+      {step.support_image_url && (
+        <div className="support-card">
+          <ImageWithFallback src={step.support_image_url} alt={step.title} className="support-image" />
+          <p>Енот рядом. Этот блок уже почти закрыт.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -410,9 +619,7 @@ function FinalStepView({
         <p>{selectedName ? `${selectedName} добрался до финиша.` : "Анкета готова к отправке."}</p>
         {result && (
           <div className="result-box">
-            <strong>{result.message ?? "Анкета получена. HR свяжется с тобой в течение пары дней."}</strong>
-            {typeof result.score === "number" && <span>Скоринг: {result.score}</span>}
-            {result.status && <span>Статус: {result.status}</span>}
+            <strong>{result.message ?? "Спасибо! Анкета отправлена."}</strong>
           </div>
         )}
         {error && <p className="error-text">{error}</p>}
