@@ -13,16 +13,18 @@ func CalculateScore(s Submission) (int, ScoreAnalysis) {
 	}
 
 	// 1. Хард-скиллы (Релевантность)
-	hards, _ := s.Answers["hard_skills"].([]interface{})
+	hards := getStringSlice(s.Answers["hard_skills"])
 	techPoints := 0
 	matches := 0
 	for _, skill := range hards {
-		if targetSkills[fmt.Sprintf("%v", skill)] {
+		if targetSkills[skill] {
 			techPoints += 10
 			matches++
 		}
 	}
-	if techPoints > 50 { techPoints = 50 }
+	if techPoints > 50 {
+		techPoints = 50
+	}
 
 	if matches >= 3 {
 		analysis.Strengths = append(analysis.Strengths, "Высокая релевантность стека технологий")
@@ -32,33 +34,107 @@ func CalculateScore(s Submission) (int, ScoreAnalysis) {
 	} else {
 		analysis.Weaknesses = append(analysis.Weaknesses, "Навыки не соответствуют профилю вакансии")
 	}
-	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{"Навыки", techPoints, 50})
+	if len(hards) < 3 {
+		analysis.Weaknesses = append(analysis.Weaknesses, "Узкий набор технических компетенций")
+	}
+	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{Label: "Технические навыки", Points: techPoints, Max: 50})
 	total += techPoints
 
-	// 2. Опыт (Количественная оценка)
+	// 2. Опыт и стажировки
 	expLevel := fmt.Sprintf("%v", s.Answers["exp_level"])
-	expPoints := 0
-	switch expLevel {
-	case "1": expPoints = 10
-	case "2": expPoints = 20
-	case "3": expPoints = 30
-	case "4", "5+": expPoints = 40
+	internLevel := fmt.Sprintf("%v", s.Answers["intern_level"])
+	expPoints := pointsFromLevel(expLevel, 18, 5)
+	internPoints := pointsFromLevel(internLevel, 12, 4)
+	experiencePoints := expPoints + internPoints
+	if experiencePoints > 30 {
+		experiencePoints = 30
 	}
-	if expPoints >= 30 {
-		analysis.Strengths = append(analysis.Strengths, "Опытный специалист (3+ года)")
+	if expPoints >= 13 {
+		analysis.Strengths = append(analysis.Strengths, "Есть уверенный практический опыт")
+	} else if expLevel == "0" {
+		analysis.Weaknesses = append(analysis.Weaknesses, "Нет коммерческого опыта")
 	}
-	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{"Опыт", expPoints, 40})
-	total += expPoints
+	if internPoints >= 8 {
+		analysis.Strengths = append(analysis.Strengths, "Есть опыт стажировок")
+	} else if internLevel == "0" {
+		analysis.Weaknesses = append(analysis.Weaknesses, "Не указаны стажировки")
+	}
+	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{Label: "Опыт и стажировки", Points: experiencePoints, Max: 30})
+	total += experiencePoints
 
-	// 3. Доступность (Бонус за скорость)
+	// 3. Доступность и формат
 	ready := fmt.Sprintf("%v", s.Answers["ready_status"])
-	readyPoints := 0
-	if ready == "Завтра" {
-		readyPoints = 10
-		analysis.Strengths = append(analysis.Strengths, "Готов к немедленному выходу")
+	schedule := fmt.Sprintf("%v", s.Answers["schedule"])
+	workType := fmt.Sprintf("%v", s.Answers["work_type"])
+	availabilityPoints := 0
+	switch expLevel {
+	case "1":
+	case "2":
+	case "3":
+	case "4", "5+":
 	}
-	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{"Доступность", readyPoints, 10})
-	total += readyPoints
+	switch ready {
+	case "Завтра":
+		availabilityPoints += 10
+		analysis.Strengths = append(analysis.Strengths, "Готов к немедленному выходу")
+	case "Через неделю":
+		availabilityPoints += 7
+	case "Через месяц":
+		availabilityPoints += 4
+		analysis.Weaknesses = append(analysis.Weaknesses, "Доступность к выходу не самая быстрая")
+	}
+
+	if schedule == "Полный день" || schedule == "Гибкий график" {
+		availabilityPoints += 5
+	}
+	if workType == "Офис" || workType == "Гибрид" {
+		availabilityPoints += 5
+	}
+
+	if availabilityPoints > 20 {
+		availabilityPoints = 20
+	}
+	analysis.ScoreDetails = append(analysis.ScoreDetails, ScoreDetail{Label: "Доступность", Points: availabilityPoints, Max: 20})
+	total += availabilityPoints
+
+	achievementLevel := fmt.Sprintf("%v", s.Answers["achievements"])
+	if achievementLevel == "0" {
+		analysis.Weaknesses = append(analysis.Weaknesses, "Не указаны достижения в профильных соревнованиях")
+	}
+
+	if len(analysis.Strengths) == 0 {
+		analysis.Strengths = append(analysis.Strengths, "Анкета заполнена корректно и готова к рассмотрению")
+	}
 
 	return total, analysis
+}
+
+func getStringSlice(value interface{}) []string {
+	switch typed := value.(type) {
+	case []string:
+		return typed
+	case []interface{}:
+		result := make([]string, 0, len(typed))
+		for _, item := range typed {
+			result = append(result, fmt.Sprintf("%v", item))
+		}
+		return result
+	default:
+		return nil
+	}
+}
+
+func pointsFromLevel(level string, maxPoints int, step int) int {
+	switch level {
+	case "1":
+		return step
+	case "2":
+		return step * 2
+	case "3":
+		return step * 3
+	case "4", "5+":
+		return maxPoints
+	default:
+		return 0
+	}
 }

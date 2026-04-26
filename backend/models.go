@@ -31,6 +31,14 @@ type Submission struct {
 	Answers map[string]interface{} `json:"answers"`
 }
 
+type SubmitResponse struct {
+	ID          int    `json:"id"`
+	CandidateID int    `json:"candidate_id"`
+	Score       int    `json:"score"`
+	Status      string `json:"status"`
+	Message     string `json:"message"`
+}
+
 type ScoreDetail struct {
 	Label  string `json:"label"`
 	Points int    `json:"points"`
@@ -50,4 +58,11 @@ type Candidate struct {
 	TotalScore  int                    `json:"total_score"`
 	Analysis    ScoreAnalysis          `json:"analysis"`
 	FullAnswers map[string]interface{} `json:"full_answers"`
+}
+
+type CandidateSummary struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	EnotID     string `json:"enot_id"`
+	TotalScore int    `json:"total_score"`
 }

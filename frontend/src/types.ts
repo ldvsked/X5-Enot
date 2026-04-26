@@ -58,8 +58,8 @@ export type SubmitRequest = {
 };
 
 export type SubmitResponse = {
-  id?: string;
-  candidate_id?: string;
+  id?: number;
+  candidate_id?: number;
   score?: number;
   status?: "top" | "review" | "delayed_reject";
   message?: string;

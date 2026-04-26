@@ -11,6 +11,10 @@ RUN go mod download
 # Копируем весь исходный код бэкенда
 COPY . .
 
+# ДОБАВЬ ЭТУ СТРОКУ ТУТ:
+RUN go mod tidy
+
+
 # Собираем бинарный файл (CGO_ENABLED=0 нужен для запуска в alpine)
 RUN CGO_ENABLED=0 GOOS=linux go build -o x5-enot-backend .
 
